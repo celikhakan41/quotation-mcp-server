@@ -1,0 +1,32 @@
+[
+  {
+    "name": "createQuotation",
+    "description": "Creates a new quotation.",
+    "params": {
+      "customerName": "Customer name (string)",
+      "currency": "Currency code (TRY, USD, EUR...)",
+      "items": "Product list (array of {product, quantity})"
+    }
+  },
+  {
+    "name": "getQuotationDetails",
+    "description": "Retrieves details for the given quotation ID.",
+    "params": {
+      "quotationId": "Quotation UUID (string)"
+    }
+  },
+  {
+    "name": "calculateDiscountedPrice",
+    "description": "Calculates discounted total price based on product quantities.",
+    "params": {
+      "items": "Product list (array of {product, quantity})"
+    }
+  },
+  {
+    "name": "getSuggestedDiscounts",
+    "description": "Returns recommended discount strategies based on product list.",
+    "params": {
+      "products": "Array of product names (string array)"
+    }
+  }
+]
