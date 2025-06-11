@@ -1,9 +1,6 @@
 package com.example.quotation.service;
 
-import com.example.quotation.dto.CreateQuotationRequest;
-import com.example.quotation.dto.DiscountCalculationRequest;
-import com.example.quotation.dto.DiscountCalculationResponse;
-import com.example.quotation.dto.QuotationResponse;
+import com.example.quotation.dto.*;
 import com.example.quotation.dto.QuotationResponse.ItemPrice;
 import org.springframework.stereotype.Service;
 
@@ -78,5 +75,33 @@ public class QuotationService {
         }
 
         return new DiscountCalculationResponse(resultItems, totalBefore, totalDiscount, totalBefore - totalDiscount);
+    }
+
+    public DiscountSuggestionResponse getSuggestedDiscounts(DiscountSuggestionRequest request) {
+        List<DiscountSuggestionResponse.Suggestion> result = new ArrayList<>();
+
+        for (String product : request.getProducts()) {
+            String strategy;
+            String note;
+
+            switch (product.toLowerCase()) {
+                case "premium package" -> {
+                    strategy = "Buy 3 or more → 15% off";
+                    note = "Special advantage for businesses.";
+                }
+                case "extra module" -> {
+                    strategy = "Buy 5+ → 10% discount + free installation";
+                    note = "Special incentive for modular construction.";
+                }
+                default -> {
+                    strategy = "Standard pricing";
+                    note = "There is no special discount for this product.";
+                }
+            }
+
+            result.add(new DiscountSuggestionResponse.Suggestion(product, strategy, note));
+        }
+
+        return new DiscountSuggestionResponse(result);
     }
 }

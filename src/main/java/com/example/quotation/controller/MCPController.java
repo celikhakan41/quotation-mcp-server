@@ -48,6 +48,12 @@ public class MCPController {
                     response.put("result", result);
                     yield response;
                 }
+                case "getSuggestedDiscounts" -> {
+                    DiscountSuggestionRequest req = objectMapper.convertValue(params, DiscountSuggestionRequest.class);
+                    DiscountSuggestionResponse result = quotationService.getSuggestedDiscounts(req);
+                    response.put("result", result);
+                    yield response;
+                }
                 default -> {
                     response.put("error", Map.of("code", -32601, "message", "Method not found: " + method));
                     yield response;
