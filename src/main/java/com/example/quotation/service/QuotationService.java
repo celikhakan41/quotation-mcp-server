@@ -1,7 +1,10 @@
 package com.example.quotation.service;
 
 import com.example.quotation.dto.*;
-import com.example.quotation.dto.QuotationResponse.ItemPrice;
+import com.example.quotation.model.QuotationEntity;
+import com.example.quotation.model.QuotationItemEntity;
+import com.example.quotation.repository.QuotationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -9,30 +12,57 @@ import java.util.*;
 @Service
 public class QuotationService {
 
-    private final Map<String, QuotationResponse> quotationStore = new HashMap<>();
+    @Autowired
+    private QuotationRepository quotationRepository;
 
     public QuotationResponse createQuotation(CreateQuotationRequest request) {
-        List<ItemPrice> itemPrices = new ArrayList<>();
+        String quotationId = UUID.randomUUID().toString();
+
+        QuotationEntity quotationEntity = new QuotationEntity();
+        quotationEntity.setId(quotationId);
+        quotationEntity.setCustomerName(request.getCustomerName());
+        quotationEntity.setCurrency(request.getCurrency());
+
+        List<QuotationItemEntity> itemEntities = new ArrayList<>();
         double total = 0.0;
 
         for (CreateQuotationRequest.QuotationItem item : request.getItems()) {
             double unitPrice = getPriceForProduct(item.getProduct());
             double lineTotal = unitPrice * item.getQuantity();
-            itemPrices.add(new ItemPrice(item.getProduct(), item.getQuantity(), unitPrice, lineTotal));
+
+            QuotationItemEntity itemEntity = QuotationItemEntity.builder()
+                    .product(item.getProduct())
+                    .quantity(item.getQuantity())
+                    .unitPrice(unitPrice)
+                    .lineTotal(lineTotal)
+                    .quotation(quotationEntity)
+                    .build();
+
+            itemEntities.add(itemEntity);
             total += lineTotal;
         }
 
-        String id = UUID.randomUUID().toString();
-        QuotationResponse response = new QuotationResponse(
-                id,
+        quotationEntity.setItems(itemEntities);
+        quotationEntity.setTotalPrice(total);
+
+        quotationRepository.save(quotationEntity);
+
+        List<QuotationResponse.ItemPrice> items = itemEntities.stream()
+                .map(e -> new QuotationResponse.ItemPrice(
+                        e.getProduct(),
+                        e.getQuantity(),
+                        e.getUnitPrice(),
+                        e.getLineTotal()
+                ))
+                .toList();
+
+        return new QuotationResponse(
+                quotationId,
                 request.getCustomerName(),
                 request.getCurrency(),
-                itemPrices,
+                items,
                 total
         );
-
-        quotationStore.put(id, response);
-        return response;
     }
 
     private double getPriceForProduct(String product) {
@@ -44,11 +74,25 @@ public class QuotationService {
     }
 
     public QuotationResponse getQuotationDetails(String quotationId) {
-        QuotationResponse result = quotationStore.get(quotationId);
-        if (result == null) {
-            throw new IllegalArgumentException("No proposal found: " + quotationId);
-        }
-        return result;
+        QuotationEntity quotation = quotationRepository.findById(quotationId)
+                .orElseThrow(() -> new IllegalArgumentException("No proposal found: " + quotationId));
+
+        List<QuotationResponse.ItemPrice> items = quotation.getItems().stream()
+                .map(e -> new QuotationResponse.ItemPrice(
+                        e.getProduct(),
+                        e.getQuantity(),
+                        e.getUnitPrice(),
+                        e.getLineTotal()
+                ))
+                .toList();
+
+        return new QuotationResponse(
+                quotation.getId(),
+                quotation.getCustomerName(),
+                quotation.getCurrency(),
+                items,
+                quotation.getTotalPrice()
+        );
     }
 
     public DiscountCalculationResponse calculateDiscountedPrice(DiscountCalculationRequest request) {
