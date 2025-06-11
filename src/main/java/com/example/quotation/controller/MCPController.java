@@ -1,7 +1,6 @@
 package com.example.quotation.controller;
 
-import com.example.quotation.dto.CreateQuotationRequest;
-import com.example.quotation.dto.QuotationResponse;
+import com.example.quotation.dto.*;
 import com.example.quotation.service.QuotationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,17 +28,34 @@ public class MCPController {
         response.put("jsonrpc", "2.0");
         response.put("id", id);
 
-        if ("createQuotation".equals(method)) {
-            CreateQuotationRequest request = objectMapper.convertValue(params, CreateQuotationRequest.class);
-            QuotationResponse result = quotationService.createQuotation(request);
-            response.put("result", result);
-        } else {
-            response.put("error", Map.of(
-                    "code", -32601,
-                    "message", "Method not found: " + method
-            ));
+        try {
+            return switch (method) {
+                case "createQuotation" -> {
+                    CreateQuotationRequest request = objectMapper.convertValue(params, CreateQuotationRequest.class);
+                    QuotationResponse result = quotationService.createQuotation(request);
+                    response.put("result", result);
+                    yield response;
+                }
+                case "getQuotationDetails" -> {
+                    GetQuotationRequest req = objectMapper.convertValue(params, GetQuotationRequest.class);
+                    QuotationResponse result = quotationService.getQuotationDetails(req.getQuotationId());
+                    response.put("result", result);
+                    yield response;
+                }
+                case "calculateDiscountedPrice" -> {
+                    DiscountCalculationRequest req = objectMapper.convertValue(params, DiscountCalculationRequest.class);
+                    DiscountCalculationResponse result = quotationService.calculateDiscountedPrice(req);
+                    response.put("result", result);
+                    yield response;
+                }
+                default -> {
+                    response.put("error", Map.of("code", -32601, "message", "Method not found: " + method));
+                    yield response;
+                }
+            };
+        } catch (Exception e) {
+            response.put("error", Map.of("code", -32000, "message", e.getMessage()));
+            return response;
         }
-
-        return response;
     }
 }
