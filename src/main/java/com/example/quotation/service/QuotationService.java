@@ -49,7 +49,7 @@ public class QuotationService {
     public QuotationResponse getQuotationDetails(String quotationId) {
         QuotationResponse result = quotationStore.get(quotationId);
         if (result == null) {
-            throw new IllegalArgumentException("Teklif bulunamadı: " + quotationId);
+            throw new IllegalArgumentException("No proposal found: " + quotationId);
         }
         return result;
     }
